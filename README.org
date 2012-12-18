@@ -1,0 +1,10 @@
+* Description
+  This project will make possible to use the sponge in conjunction with
+  libmapper and its various tools.   
+
+  See http://www.idmil.org/software/libmapper
+
+* How to use
+  Run sponge.py (from within this directory).
+
+

@@ -1,0 +1,55 @@
+{
+    "mapping": {
+        "connections": [
+            {
+                "muted": 0, 
+                "scaling": "linear", 
+                "clipMin": "none", 
+                "range": "0.0 1023.0 0.0 127.0", 
+                "expression": "d0=s0*(0.124145)+(-0)", 
+                "clipMax": "none"
+            }, 
+            {
+                "muted": 0, 
+                "scaling": "linear", 
+                "clipMin": "none", 
+                "range": "0.0 1023.0 0.0 127.0", 
+                "expression": "d0=s1*(0.124145)+(-0)", 
+                "clipMax": "none"
+            }, 
+            {
+                "muted": 0, 
+                "scaling": "linear", 
+                "clipMin": "none", 
+                "range": "0.0 1023.0 0.0 127.0", 
+                "expression": "d0=s2*(0.124145)+(-0)", 
+                "clipMax": "none"
+            }
+        ], 
+        "sources": [
+            {
+                "device": "sponge.1", 
+                "parameter": "/acc1x", 
+                "id": "s1"
+            }, 
+            {
+                "device": "sponge.1", 
+                "parameter": "/acc1z", 
+                "id": "s2"
+            }, 
+            {
+                "device": "sponge.1", 
+                "parameter": "/acc2z", 
+                "id": "s0"
+            }
+        ], 
+        "fileversion": "dot-1", 
+        "destinations": [
+            {
+                "device": "puredata.4", 
+                "parameter": "/in1", 
+                "id": "d0"
+            }
+        ]
+    }
+}
