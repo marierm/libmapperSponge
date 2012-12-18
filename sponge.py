@@ -5,6 +5,9 @@ import slip.ProtoSLIP as ProtoSLIP
 import mapper
 
 dev = mapper.device("sponge", 9000)
+port = '/dev/ttyUSB0'           # Change this.
+baudrate = 115200               # Could be 57600 or 19200 (if you are Garth
+                                # Paine).
 
 continuousNames = [
     "/acc1x", "/acc1y", "/acc1z",
@@ -23,7 +26,7 @@ for i in range(numButt):
     outputs.append(dev.add_output("/button" + str(i), 1, 'i', "", 0, 1))
 
 
-ser = SerialComm.connectToSerialPort()
+ser = SerialComm.connectToSerialPort(port, baudrate)
 bytes = ProtoSLIP.decodeFromSLIP(ser)
 
 # Make sure we have a complete packet before going on.

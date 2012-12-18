@@ -6,8 +6,11 @@ import termios
 import serial  
 #-------------------------------------------------------------------------------  
 # This function connect and configure the serial port. Then returns the file discripter  
-def connectToSerialPort():  
-     serialFD = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8, parity='N', stopbits=1, xonxoff=False, rtscts=False)  
+def connectToSerialPort(port='/dev/ttyUSB0', baudrate=115200):  
+     serialFD = serial.Serial(
+          port, baudrate,
+          bytesize=8, parity='N', stopbits=1, xonxoff=False, rtscts=False
+          )  
      # port='/dev/ttyUSB0'- port to open  
      # baudrate=115200  - baud rate to communicate with the port  
      # bytesize=8           - size of a byte  

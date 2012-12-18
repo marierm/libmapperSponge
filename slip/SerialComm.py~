@@ -1,3 +1,6 @@
+# Code stolen from Asanka P. Sayakkara here:
+# http://recolog.blogspot.ca/2012/10/serial-line-internet-protocol-slip.html
+
 import ProtoSLIP  
 import termios  
 import serial  
