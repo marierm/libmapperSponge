@@ -1,0 +1,56 @@
+#N canvas 773 434 950 515 10;
+#X obj 58 93 implicitmap 8 8;
+#X msg 276 13 list;
+#X obj 145 133 print implicitmap;
+#X msg 58 61 print;
+#X obj 416 233 mapper;
+#X obj 58 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 6331 1;
+#X obj 79 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 6604 1;
+#X obj 100 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 10192 1;
+#X obj 121 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 6431 1;
+#X obj 142 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 6220 1;
+#X obj 163 186 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 10230 1;
+#X obj 58 161 unpack f f f f f f;
+#X obj 416 261 route /in1 /in2 /in3;
+#X obj 416 299 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 1713 1;
+#X obj 437 299 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 1673 1;
+#X obj 458 299 vsl 15 128 0 1023 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 8958 1;
+#X msg 450 175 1 \, 2 \, 3;
+#X msg 210 75 randomize;
+#X msg 399 149 add input /in\$1 @type f @length 1 @min 0 @max 1023
+;
+#X msg 442 200 remove input /in\$1;
+#X msg 392 76 1 \, 2 \, 3;
+#X msg 132 39 clear;
+#X msg 334 17 snapshot;
+#X connect 0 0 11 0;
+#X connect 0 1 2 0;
+#X connect 0 2 2 0;
+#X connect 1 0 0 0;
+#X connect 3 0 0 0;
+#X connect 4 0 12 0;
+#X connect 11 0 5 0;
+#X connect 11 1 6 0;
+#X connect 11 2 7 0;
+#X connect 11 3 8 0;
+#X connect 11 4 9 0;
+#X connect 11 5 10 0;
+#X connect 12 0 13 0;
+#X connect 12 1 14 0;
+#X connect 12 2 15 0;
+#X connect 16 0 19 0;
+#X connect 17 0 0 0;
+#X connect 18 0 4 0;
+#X connect 19 0 4 0;
+#X connect 20 0 18 0;
+#X connect 21 0 0 0;
+#X connect 22 0 0 0;
