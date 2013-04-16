@@ -7,7 +7,8 @@ import serial
 from serial.tools import list_ports
 import slip.SerialComm as SerialComm
 import slip.ProtoSLIP as ProtoSLIP
-import mapper
+# import mapper
+import liblo
 import threading
 import math
 
@@ -46,12 +47,25 @@ class SpongeView(wx.Frame):
             rates.append(str(baudRates[i]))
         textBaud = wx.StaticText(panel, id=-1, label="Baudrate: ")
         self.choiceBaud = wx.Choice(panel, id=-1, choices=rates)
+        textHost = wx.StaticText(panel, id=-1, label="OSC Host Name: ")
+        self.oscHost = wx.TextCtrl(panel, id=-1, value="localhost")
+        textPath = wx.StaticText(panel, id=-1, label="OSC Base Path: ")
+        self.oscPath = wx.TextCtrl(panel, id=-1, value="/sponge")
+        textOscPort = wx.StaticText(panel, id=-1, label="OSC Port: ")
+        self.oscPort = wx.TextCtrl(panel, id=-1, value="57120")
 
         flexbox.AddMany([
                 (textPort, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
                 (self.choicePort, 1, wx.EXPAND, 0),
                 (textBaud, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
-                (self.choiceBaud, 1, wx.EXPAND, 0)])
+                (self.choiceBaud, 1, wx.EXPAND, 0),
+                (textHost, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
+                (self.oscHost, 1, wx.EXPAND, 0),
+                (textPath, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
+                (self.oscPath, 1, wx.EXPAND, 0),
+                (textOscPort, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
+                (self.oscPort, 1, wx.EXPAND, 0)
+        ])
 
         hbox0.Add(flexbox, 1, flag=wx.EXPAND|wx.ALL, border=2)
 
@@ -109,7 +123,7 @@ class SpongeController:
 
 class Sponge():
     def __init__(self):
-        self.dev = mapper.device("sponge", 9000)
+        # self.dev = mapper.device("sponge", 9000)
         self.go = 1
 
         self.sensorNames = [
@@ -125,7 +139,7 @@ class Sponge():
 
     def readAndUpdate(self):
         while (self.go):
-            self.dev.poll(1)
+            # self.dev.poll(1)
             # Make sure we have a complete packet before going on.
             self.bytes = ProtoSLIP.decodeFromSLIP(self.ser)
             while (len(self.bytes) != self.packetSize):
@@ -142,8 +156,11 @@ class Sponge():
                 return i
         print "Error: No feature named", name
 
-    def openPort(self, port='/dev/ttyUSB0', baudrate=115200):
+    def openPort(self, port='/dev/ttyUSB0', baudrate=115200,
+                 hostname="localhost", oscPort=57120, oscPath="/sponge" ):
         self.ser = SerialComm.connectToSerialPort(port, baudrate)
+        self.oscTarget = liblo.Address(hostname, oscPort)
+        self.oscPath = oscPath
         self.thread = threading.Thread(target=self.readAndUpdate)
         self.thread.daemon = True
         self.thread.start()
@@ -182,9 +199,99 @@ class Sponge():
                 mx = 1))
         self.features.append(Feature(
             sponge = self,
+            function = self.createHypotFunc(),
+            inputs = ( self.getFeature('acc1x'), self.getFeature('acc1y'), self.getFeature('acc1z') ),
+            name = 'gravity1',
+            dType = 'f',
+            unit = '',
+            mn = 0,
+            mx = 1023))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createHypotFunc(),
+            inputs = ( self.getFeature('acc2x'), self.getFeature('acc2y'), self.getFeature('acc2z') ),
+            name = 'gravity2',
+            dType = 'f',
+            unit = '',
+            mn = 0,
+            mx = 1023))
+        self.features.append(Feature(
+            sponge = self,
             function = self.createAtanFunc(),
-            inputs = ( self.getFeature('acc1x'), self.getFeature('acc1z') ),
+            inputs = ( self.getFeature('acc1x'), self.getFeature('acc1z'), self.getFeature('gravity1') ),
+            name = 'pitch1',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createAtanFunc(),
+            inputs = ( self.getFeature('acc2x'), self.getFeature('acc2z'), self.getFeature('gravity2') ),
+            name = 'pitch2',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createAtanFunc(),
+            inputs = ( self.getFeature('acc1y'), self.getFeature('acc1z'), self.getFeature('gravity1') ),
             name = 'roll1',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createAtanFunc(),
+            inputs = ( self.getFeature('acc2y'), self.getFeature('acc2z'), self.getFeature('gravity2') ),
+            name = 'roll2',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createAtanFunc(),
+            inputs = ( self.getFeature('acc1x'), self.getFeature('acc1y'), self.getFeature('gravity1') ),
+            name = 'yaw1',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createAtanFunc(),
+            inputs = ( self.getFeature('acc2x'), self.getFeature('acc2y'), self.getFeature('gravity2') ),
+            name = 'yaw2',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createDiffFunc(),
+            inputs = ( self.getFeature('roll1'), self.getFeature('roll2') ),
+            name = 'twist',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createDiffFunc(),
+            inputs = ( self.getFeature('pitch1'), self.getFeature('pitch2') ),
+            name = 'bend',
+            dType = 'f',
+            unit = '',
+            mn = -math.pi,
+            mx = math.pi))
+        self.features.append(Feature(
+            sponge = self,
+            function = self.createDiffFunc(),
+            inputs = ( self.getFeature('yaw1'), self.getFeature('yaw2') ),
+            name = 'horizontalBend',
             dType = 'f',
             unit = '',
             mn = -math.pi,
@@ -193,6 +300,7 @@ class Sponge():
     def createContFunc(self, i):
         def func(sponge):
             val = (sponge.bytes[i*2]<<8) + sponge.bytes[(i*2)+1]
+            # val = -val + 1023
             return val
         return func
 
@@ -206,7 +314,21 @@ class Sponge():
 
     def createAtanFunc(self):
         def func(sponge, *inputs):
-            val = math.atan2(inputs[0].value - 512, inputs[1].value - 512)
+            y = (inputs[0].value - 512) / inputs[2].value
+            x = (inputs[1].value - 512) / inputs[2].value
+            val = math.atan2(y, x)
+            return val
+        return func
+
+    def createDiffFunc(self):
+        def func(sponge, *inputs):
+            val = inputs[0].value - inputs[1].value
+            return val
+        return func
+
+    def createHypotFunc(self):
+        def func(sponge, *inputs):
+            val = ( (inputs[0].value - 512)**2 + (inputs[1].value - 512)**2 +  (inputs[2].value - 512)**2 )**0.5
             return val
         return func
 
@@ -214,7 +336,7 @@ class Feature():
     def __init__(self, sponge, function, inputs,
                  name='Feature', dType='f', unit='', mn=0.0, mx=1.0):
         self.sponge = sponge
-        self.dev = sponge.dev
+        # self.dev = sponge.dev
         self.name = name
         self.dType = dType
         self.unit = unit
@@ -224,26 +346,33 @@ class Feature():
         self.function = function
         self.isActive = False
         self.children = []
+
     def update(self):
         self.value = self.function(self.sponge, *self.inputs)
-        self.mapperOutput.update(self.value)
+        # self.mapperOutput.update(self.value)
+        liblo.send(
+            self.sponge.oscTarget,
+            self.sponge.oscPath + "/" + self.name,
+            self.value
+        )
+
     def activate(self):
         if (not self.isActive):
             for i in self.inputs:
-                i.activate
+                i.activate()
                 i.children.append(self)
             self.sponge.activeFeatures.append(self)
-            self.mapperOutput = self.dev.add_output(self.name, 1, self.dType, self.unit, self.mn, self.mx)
+            # self.mapperOutput = self.dev.add_output(self.name, 1, self.dType, self.unit, self.mn, self.mx)
             self.isActive = True
             Publisher().sendMessage("featureActivation", (self.name, True))
 
     def deactivate(self):
         if (self.isActive):
             for i in self.children:
-                i.deactivate
+                i.deactivate()
                 self.children.remove(i)
             self.sponge.activeFeatures.remove(self)
-            self.dev.remove_output(self.mapperOutput)
+            # self.dev.remove_output(self.mapperOutput)
             self.isActive = False
             Publisher().sendMessage(("featureActivation"), (self.name, False))
 
