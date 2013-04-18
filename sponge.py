@@ -17,7 +17,7 @@ baudRates = [115200, 57600, 19200]
 
 class SpongeView(wx.Frame):
     def __init__(self, parent, title):
-        super(SpongeView, self).__init__(parent, title=title, size=(600,200))
+        super(SpongeView, self).__init__(parent, title=title, size=(500,400))
         
         self.InitUI()
         self.Centre()
@@ -48,11 +48,11 @@ class SpongeView(wx.Frame):
         textBaud = wx.StaticText(panel, id=-1, label="Baudrate: ")
         self.choiceBaud = wx.Choice(panel, id=-1, choices=rates)
         textHost = wx.StaticText(panel, id=-1, label="OSC Host Name: ")
-        self.oscHost = wx.TextCtrl(panel, id=-1, value="localhost")
+        self.oscHost = wx.TextCtrl(panel, id=-1, style=wx.TE_PROCESS_ENTER)
         textPath = wx.StaticText(panel, id=-1, label="OSC Base Path: ")
-        self.oscPath = wx.TextCtrl(panel, id=-1, value="/sponge")
+        self.oscPath = wx.TextCtrl(panel, id=-1, style=wx.TE_PROCESS_ENTER)
         textOscPort = wx.StaticText(panel, id=-1, label="OSC Port: ")
-        self.oscPort = wx.TextCtrl(panel, id=-1, value="57120")
+        self.oscPort = wx.TextCtrl(panel, id=-1, style=wx.TE_PROCESS_ENTER)
 
         flexbox.AddMany([
                 (textPort, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0),
@@ -88,16 +88,35 @@ class SpongeController:
         self.view = SpongeView(None, 'Sponge') # View
         self.view.openButton.Bind(wx.EVT_TOGGLEBUTTON, self.openSpongePort)
         self.view.checkList.Bind(wx.EVT_CHECKLISTBOX, self.featureActivation)
+        self.view.oscHost.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
+        self.view.oscPort.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
+        self.view.oscPath.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
+        Publisher().subscribe(self.featureActivationChanged, "featureActivation")
+        Publisher().subscribe(self.oscTargetChanged, "oscTarget")
 
         featureList = []
         for i in self.sponge.features:
             featureList.append(i.name)
         self.view.checkList.Set(featureList)
-        Publisher().subscribe(self.featureActivationChanged, "featureActivation")
 
         for i in self.sponge.features:
             i.activate()
 
+        self.oscTargetChanged(())
+
+    def oscTargetChanged(self, msg):
+        print self.sponge.oscTarget.get_url()
+        self.view.oscHost.SetValue(self.sponge.oscTarget.hostname)
+        self.view.oscPort.SetValue(str(self.sponge.oscTarget.port))
+        self.view.oscPath.SetValue(self.sponge.oscPath)
+
+    def setOscTarget(self, evt):
+        self.sponge.setOscTarget(
+            hostname=self.view.oscHost.GetValue(),
+            port=self.view.oscPort.GetValue(),
+            path=self.view.oscPath.GetValue()
+        )
+        
     def featureActivationChanged(self, msg):
         index = self.view.checkList.Items.index(msg.data[0])
         check = msg.data[1]
@@ -107,7 +126,8 @@ class SpongeController:
         if (evt.GetInt() == 1):
             self.sponge.openPort(
                 port=self.view.choicePort.GetStringSelection(),
-                baudrate=self.view.choiceBaud.GetStringSelection())
+                baudrate=self.view.choiceBaud.GetStringSelection()
+            )
         else:
             self.sponge.go = 0
 
@@ -133,9 +153,13 @@ class Sponge():
         self.numButt = 10
         self.numCont = len(self.sensorNames)
         self.packetSize = (self.numCont * 2) + (self.numButt % 8)
-
+        self.setOscTarget()
         self.initFeatures()
 
+    def setOscTarget(self, hostname="localhost", port=57120, path="/sponge"):
+        self.oscTarget = liblo.Address(hostname, port)
+        self.oscPath = path
+        Publisher().sendMessage("oscTarget", (hostname,port,path))
 
     def readAndUpdate(self):
         while (self.go):
@@ -156,11 +180,8 @@ class Sponge():
                 return i
         print "Error: No feature named", name
 
-    def openPort(self, port='/dev/ttyUSB0', baudrate=115200,
-                 hostname="localhost", oscPort=57120, oscPath="/sponge" ):
+    def openPort(self, port='/dev/ttyUSB0', baudrate=115200):
         self.ser = SerialComm.connectToSerialPort(port, baudrate)
-        self.oscTarget = liblo.Address(hostname, oscPort)
-        self.oscPath = oscPath
         self.thread = threading.Thread(target=self.readAndUpdate)
         self.thread.daemon = True
         self.thread.start()
