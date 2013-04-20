@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import wx
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import pub
 import serial
 from serial.tools import list_ports
 import slip.SerialComm as SerialComm
@@ -91,8 +91,8 @@ class SpongeController:
         self.view.oscHost.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
         self.view.oscPort.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
         self.view.oscPath.Bind(wx.EVT_TEXT_ENTER, self.setOscTarget)
-        Publisher().subscribe(self.featureActivationChanged, "featureActivation")
-        Publisher().subscribe(self.oscTargetChanged, "oscTarget")
+        pub.subscribe(self.featureActivationChanged, "featureActivation")
+        pub.subscribe(self.oscTargetChanged, "oscTarget")
 
         featureList = []
         for i in self.sponge.features:
@@ -102,9 +102,9 @@ class SpongeController:
         for i in self.sponge.features:
             i.activate()
 
-        self.oscTargetChanged(())
+        self.oscTargetChanged()
 
-    def oscTargetChanged(self, msg):
+    def oscTargetChanged(self):
         print self.sponge.oscTarget.get_url()
         self.view.oscHost.SetValue(self.sponge.oscTarget.hostname)
         self.view.oscPort.SetValue(str(self.sponge.oscTarget.port))
@@ -117,9 +117,9 @@ class SpongeController:
             path=self.view.oscPath.GetValue()
         )
         
-    def featureActivationChanged(self, msg):
-        index = self.view.checkList.Items.index(msg.data[0])
-        check = msg.data[1]
+    def featureActivationChanged(self, name, go):
+        index = self.view.checkList.Items.index(name)
+        check = go
         self.view.checkList.Check(index, check)
 
     def openSpongePort(self, evt):
@@ -159,7 +159,7 @@ class Sponge():
     def setOscTarget(self, hostname="localhost", port=57120, path="/sponge"):
         self.oscTarget = liblo.Address(hostname, port)
         self.oscPath = path
-        Publisher().sendMessage("oscTarget", (hostname,port,path))
+        pub.sendMessage("oscTarget")
 
     def readAndUpdate(self):
         while (self.go):
@@ -385,7 +385,7 @@ class Feature():
             self.sponge.activeFeatures.append(self)
             # self.mapperOutput = self.dev.add_output(self.name, 1, self.dType, self.unit, self.mn, self.mx)
             self.isActive = True
-            Publisher().sendMessage("featureActivation", (self.name, True))
+            pub.sendMessage("featureActivation", name=self.name, go=True)
 
     def deactivate(self):
         if (self.isActive):
@@ -395,7 +395,7 @@ class Feature():
             self.sponge.activeFeatures.remove(self)
             # self.dev.remove_output(self.mapperOutput)
             self.isActive = False
-            Publisher().sendMessage(("featureActivation"), (self.name, False))
+            pub.sendMessage("featureActivation", name=self.name, go=False)
 
 
 if __name__ == '__main__':
