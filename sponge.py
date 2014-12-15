@@ -13,7 +13,7 @@ import threading
 import math
 
 serialPorts = list_ports.comports()
-baudRates = [115200, 57600, 19200]
+baudRates = [19200, 57600, 115200]
 
 class SpongeView(wx.Frame):
     def __init__(self, parent, title):
@@ -156,7 +156,7 @@ class Sponge():
         self.setOscTarget()
         self.initFeatures()
 
-    def setOscTarget(self, hostname="localhost", port=57120, path="/sponge"):
+    def setOscTarget(self, hostname="localhost", port=28013, path="/sponge"):
         self.oscTarget = liblo.Address(hostname, port)
         self.oscPath = path
         pub.sendMessage("oscTarget")
